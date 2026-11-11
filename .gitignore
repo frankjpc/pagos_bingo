@@ -1,0 +1,29 @@
+# Dependencias
+/node_modules
+/.pnp
+.pnp.js
+
+# Compilación y caché de Next.js
+/.next/
+/out/
+/build
+
+# Variables de entorno y claves privadas (Supabase, API de Gemini, etc.)
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Registros de errores y depuración
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Archivos del sistema y TypeScript
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+.vercel
