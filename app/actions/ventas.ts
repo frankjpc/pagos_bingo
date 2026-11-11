@@ -1,13 +1,13 @@
 'use server';
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminSupabaseClient } from '@/lib/supabase/server';
 import { AsignarCartonesResponse } from '@/lib/types';
 
 export async function registrarVentaYAsignarCartones(
   formData: FormData
 ): Promise<AsignarCartonesResponse> {
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createAdminSupabaseClient();
 
     const moderadorId = formData.get('moderador_id') as string;
     const compradorNombre = (formData.get('comprador_nombre') as string)?.trim();

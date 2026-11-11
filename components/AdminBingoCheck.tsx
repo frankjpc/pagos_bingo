@@ -22,16 +22,15 @@ import {
   X,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { fetchAdminSnapshot } from '@/app/actions/admin-sync';
 import { ModeradorStats, VentaBingo } from '@/lib/types';
 import {
-  buildModeradoresStatsFromRows,
   buildVentasCsv,
   createDemoPreviewData,
   DEFAULT_DOS_MODERADORES,
   formatBs,
   formatUsd,
   getInitials,
-  LoteQueryRow,
 } from './admin/formatters';
 import SalesChartCard from './admin/SalesChartCard';
 import BuyersTableCard from './admin/BuyersTableCard';
@@ -115,78 +114,24 @@ export default function AdminBingoCheck({
     setEditingTasa(false);
   };
 
-  // Recargar lotes y lista completa de compradores desde Supabase
+  // Recargar lotes y lista completa de compradores vía Server Action
   const recargarEstadisticas = async () => {
     if (!isSupabaseConfigured || isDemoMode) return;
 
     try {
-      const [{ data: lotes, error: lotesErr }, { data: ventasRows, error: ventasErr }] =
-        await Promise.all([
-          supabase
-            .from('lotes_talonarios')
-            .select(
-              `
-              id,
-              moderador_id,
-              bloque_nombre,
-              numero_inicial,
-              numero_final,
-              siguiente_disponible,
-              activo,
-              perfiles:moderador_id (
-                nombre
-              )
-            `
-            )
-            .eq('activo', true)
-            .order('numero_inicial', { ascending: true }),
-          supabase
-            .from('ventas_bingo')
-            .select(
-              `
-              id,
-              moderador_id,
-              lote_id,
-              comprador_nombre,
-              banco_origen,
-              referencia,
-              monto,
-              cantidad_cartones,
-              carton_desde,
-              carton_hasta,
-              comprobante_url,
-              estado,
-              created_at,
-              perfiles:moderador_id (
-                nombre
-              )
-            `
-            )
-            .order('created_at', { ascending: false })
-            .limit(300),
-        ]);
-
-      const parsedVentas = (!ventasErr && ventasRows
-        ? (ventasRows as unknown as VentaBingo[])
-        : []) as VentaBingo[];
-
-      if (lotes && !lotesErr) {
-        const statsMap = buildModeradoresStatsFromRows(
-          lotes as unknown as LoteQueryRow[],
-          parsedVentas
+      const snapshot = await fetchAdminSnapshot();
+      startTransition(() => {
+        setModeradores(
+          snapshot.moderadores.length > 0 ? snapshot.moderadores : DEFAULT_DOS_MODERADORES
         );
-
-        startTransition(() => {
-          setModeradores(statsMap.length > 0 ? statsMap : DEFAULT_DOS_MODERADORES);
-          setVentas(parsedVentas);
-        });
-      }
+        setVentas(snapshot.ventas);
+      });
     } catch (err) {
       console.error('Error al actualizar métricas en vivo:', err);
     }
   };
 
-  // Suscripción Supabase Realtime solo cuando hay configuración válida
+  // Suscripción Supabase Realtime + respaldo de sincronización cada 8s
   useEffect(() => {
     if (!isSupabaseConfigured || isDemoMode) return;
 
@@ -208,7 +153,12 @@ export default function AdminBingoCheck({
       )
       .subscribe();
 
+    const intervalId = setInterval(() => {
+      recargarEstadisticas();
+    }, 8000);
+
     return () => {
+      clearInterval(intervalId);
       supabase.removeChannel(channel);
     };
   }, [isSupabaseConfigured, isDemoMode]);
@@ -741,7 +691,7 @@ export default function AdminBingoCheck({
                     ventas={ventas}
                     moderadores={moderadores}
                     tasaUsd={tasaUsd}
-                    maxRows={6}
+                    scrollMaxHeightClass="max-h-[300px]"
                     selectedModeratorId={selectedModFilter}
                     onSelectModerator={setSelectedModFilter}
                     onViewReceipt={(url) => setComprobanteModalUrl(url)}
@@ -1023,6 +973,7 @@ export default function AdminBingoCheck({
                   ventas={ventas}
                   moderadores={moderadores}
                   tasaUsd={tasaUsd}
+                  scrollMaxHeightClass="max-h-[540px]"
                   selectedModeratorId={selectedModFilter}
                   onSelectModerator={setSelectedModFilter}
                   onViewReceipt={(url) => setComprobanteModalUrl(url)}
@@ -1052,7 +1003,7 @@ export default function AdminBingoCheck({
                   ventas={ventas}
                   moderadores={moderadores}
                   tasaUsd={tasaUsd}
-                  maxRows={8}
+                  scrollMaxHeightClass="max-h-[340px]"
                   selectedModeratorId={selectedModFilter}
                   onSelectModerator={setSelectedModFilter}
                   onViewReceipt={(url) => setComprobanteModalUrl(url)}
@@ -1163,6 +1114,7 @@ export default function AdminBingoCheck({
                   ventas={ventas}
                   moderadores={moderadores}
                   tasaUsd={tasaUsd}
+                  scrollMaxHeightClass="max-h-[420px]"
                   selectedModeratorId={selectedModFilter}
                   onSelectModerator={setSelectedModFilter}
                   onViewReceipt={(url) => setComprobanteModalUrl(url)}

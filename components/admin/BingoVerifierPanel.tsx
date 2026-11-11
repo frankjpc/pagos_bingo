@@ -13,9 +13,9 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { VentaBingo } from '@/lib/types';
 import { anularVentaBingo } from '@/app/actions/anular';
+import { buscarCartonEnServidor } from '@/app/actions/admin-sync';
 import { formatBs, formatUsd } from './formatters';
 
 interface BingoVerifierPanelProps {
@@ -37,7 +37,6 @@ export default function BingoVerifierPanel({
   onRequestVoid,
   inputRef,
 }: BingoVerifierPanelProps) {
-  const supabase = createClient();
   const [numeroCarton, setNumeroCarton] = useState('');
   const [buscando, setBuscando] = useState(false);
   const [resultadoVenta, setResultadoVenta] = useState<VentaBingo | null>(null);
@@ -66,38 +65,8 @@ export default function BingoVerifierPanel({
         return;
       }
 
-      const { data, error } = await supabase
-        .from('ventas_bingo')
-        .select(
-          `
-          id,
-          moderador_id,
-          lote_id,
-          comprador_nombre,
-          banco_origen,
-          referencia,
-          monto,
-          cantidad_cartones,
-          carton_desde,
-          carton_hasta,
-          comprobante_url,
-          estado,
-          created_at,
-          perfiles:moderador_id (
-            nombre
-          )
-        `
-        )
-        .lte('carton_desde', numero)
-        .gte('carton_hasta', numero)
-        .eq('estado', 'aprobado')
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error al buscar cartón:', error);
-      }
-
-      setResultadoVenta((data as unknown as VentaBingo) || null);
+      const match = await buscarCartonEnServidor(numero);
+      setResultadoVenta(match);
     } catch (err) {
       console.error('Error buscando cartón:', err);
     } finally {

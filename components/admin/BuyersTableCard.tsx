@@ -22,7 +22,7 @@ interface BuyersTableCardProps {
   ventas: VentaBingo[];
   moderadores: ModeradorStats[];
   tasaUsd: number;
-  maxRows?: number;
+  scrollMaxHeightClass?: string;
   selectedModeratorId?: string | null;
   onSelectModerator?: (id: string | null) => void;
   onViewReceipt: (url: string) => void;
@@ -36,7 +36,7 @@ export default function BuyersTableCard({
   ventas,
   moderadores,
   tasaUsd,
-  maxRows,
+  scrollMaxHeightClass = 'max-h-[340px]',
   selectedModeratorId = null,
   onSelectModerator,
   onViewReceipt,
@@ -71,7 +71,8 @@ export default function BuyersTableCard({
     });
   }, [ventas, searchTerm, statusFilter, selectedModeratorId]);
 
-  const visibleVentas = maxRows ? filteredVentas.slice(0, maxRows) : filteredVentas;
+  const scrollbarClasses =
+    '[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-200 hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300';
 
   return (
     <div className="bg-white rounded-[24px] p-5 border border-zinc-200/70 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.03)] space-y-4">
@@ -173,8 +174,8 @@ export default function BuyersTableCard({
         </div>
       </div>
 
-      {/* Contenido: Tabla Desktop / Cards Mobile */}
-      {visibleVentas.length === 0 ? (
+      {/* Contenido: Tabla Desktop / Cards Mobile con scroll interno */}
+      {filteredVentas.length === 0 ? (
         <div className="py-10 px-4 text-center bg-zinc-50/70 border border-dashed border-zinc-200 rounded-2xl space-y-2.5">
           <div className="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center mx-auto text-zinc-400">
             <Users className="w-5 h-5" />
@@ -202,20 +203,20 @@ export default function BuyersTableCard({
       ) : (
         <>
           {/* Vista Tabla (Desktop / Tablet >= md) */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className={`hidden md:block overflow-x-auto overflow-y-auto pr-1.5 ${scrollMaxHeightClass} ${scrollbarClasses}`}>
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-100 text-[11px] font-medium text-zinc-400">
-                  <th className="pb-2.5 font-medium">Comprador / Cartones</th>
-                  <th className="pb-2.5 font-medium">Moderador</th>
-                  <th className="pb-2.5 font-medium">Hora & Referencia</th>
-                  <th className="pb-2.5 font-medium">Estado</th>
-                  <th className="pb-2.5 font-medium text-right">Monto (Bs / USD)</th>
-                  <th className="pb-2.5 font-medium text-right">Acción</th>
+              <thead className="sticky top-0 bg-white z-10 shadow-[0_1px_0_0_rgba(244,244,245,1)]">
+                <tr className="text-[11px] font-medium text-zinc-400">
+                  <th className="pb-2.5 pt-0.5 font-medium bg-white">Comprador / Cartones</th>
+                  <th className="pb-2.5 pt-0.5 font-medium bg-white">Moderador</th>
+                  <th className="pb-2.5 pt-0.5 font-medium bg-white">Hora & Referencia</th>
+                  <th className="pb-2.5 pt-0.5 font-medium bg-white">Estado</th>
+                  <th className="pb-2.5 pt-0.5 font-medium text-right bg-white">Monto (Bs / USD)</th>
+                  <th className="pb-2.5 pt-0.5 font-medium text-right bg-white">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100/90 text-xs">
-                {visibleVentas.map((venta) => {
+                {filteredVentas.map((venta) => {
                   const dt = new Date(venta.created_at);
                   const fechaStr = dt.toLocaleDateString('es-VE', {
                     day: '2-digit',
@@ -328,8 +329,8 @@ export default function BuyersTableCard({
           </div>
 
           {/* Vista Cards Mobile (< md) */}
-          <div className="md:hidden space-y-2.5">
-            {visibleVentas.map((venta) => {
+          <div className={`md:hidden space-y-2.5 overflow-y-auto pr-1 ${scrollMaxHeightClass} ${scrollbarClasses}`}>
+            {filteredVentas.map((venta) => {
               const dt = new Date(venta.created_at);
               const horaStr = dt.toLocaleTimeString('es-VE', {
                 hour: '2-digit',
@@ -411,15 +412,21 @@ export default function BuyersTableCard({
         </>
       )}
 
-      {maxRows && filteredVentas.length > maxRows && onExpandAll && (
-        <div className="pt-1 text-center">
-          <button
-            type="button"
-            onClick={onExpandAll}
-            className="text-xs font-medium text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
-          >
-            Ver los {filteredVentas.length} compradores registrados →
-          </button>
+      {filteredVentas.length > 0 && (
+        <div className="pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
+          <span>
+            Mostrando <strong className="text-zinc-700 font-medium">{filteredVentas.length}</strong>{' '}
+            {filteredVentas.length === 1 ? 'registro' : 'registros'} (desliza para ver más)
+          </span>
+          {onExpandAll && (
+            <button
+              type="button"
+              onClick={onExpandAll}
+              className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
+            >
+              Ampliar vista →
+            </button>
+          )}
         </div>
       )}
     </div>

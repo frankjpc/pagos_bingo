@@ -1,6 +1,9 @@
 'use server';
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import {
+  createAdminSupabaseClient,
+  createServerSupabaseClient,
+} from '@/lib/supabase/server';
 
 export async function anularVentaBingo(
   ventaId: string,
@@ -11,12 +14,15 @@ export async function anularVentaBingo(
       return { success: false, error: 'ID de venta requerido.' };
     }
 
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
 
     const adminId = user?.id || '00000000-0000-0000-0000-000000000000';
+    const supabase = await createAdminSupabaseClient();
 
-    const { data, error } = await supabase.rpc('anular_venta_bingo', {
+    const { error } = await supabase.rpc('anular_venta_bingo', {
       p_venta_id: ventaId,
       p_motivo: motivo || 'Anulación solicitada en tarima',
       p_admin_id: adminId,

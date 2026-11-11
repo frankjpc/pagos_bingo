@@ -3,13 +3,12 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { OCRReceiptResult } from '@/lib/types';
 
-// Inicialización del cliente oficial de Google Gen AI SDK
-const apiKey = process.env.GEMINI_API_KEY;
-
+// Validación Server Action con Gemini 2.5 Flash (@google/genai)
 export async function procesarComprobantePagoMovil(
   formData: FormData
 ): Promise<{ success: boolean; data?: OCRReceiptResult; error?: string }> {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error(
         'GEMINI_API_KEY no está configurada en las variables de entorno.'
@@ -29,7 +28,7 @@ export async function procesarComprobantePagoMovil(
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // Definición estricta de JSON Schema para Gemini 1.5 Flash
+    // Definición estricta de JSON Schema para Gemini 2.5 Flash
     const prompt = `Eres un auditor bancario de alta velocidad para un evento masivo.
 Analiza minuciosamente la fotografía o captura del comprobante de Pago Móvil o transferencia bancaria en pantalla de teléfono (Venezuela / Interbancario).
 Extrae con total exactitud los siguientes campos:
@@ -41,7 +40,7 @@ Extrae con total exactitud los siguientes campos:
 6. confianza: 'alta' si el comprobante es perfectamente legible, 'media' si hay ligeros reflejos pero es legible, o 'baja' si está muy borroso.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: [
         {
           role: 'user',
@@ -121,7 +120,7 @@ Extrae con total exactitud los siguientes campos:
       success: false,
       error:
         error.message ||
-        'Ocurrió un error inesperado al procesar la imagen con Gemini 1.5 Flash.',
+        'Ocurrió un error inesperado al procesar la imagen con Gemini 2.5 Flash.',
     };
   }
 }
