@@ -1,5 +1,5 @@
 -- ==============================================================================
--- SCRIPT DE SEMILLA PARA EVENTO DE BINGO (7 MODERADORES + 1 ADMIN)
+-- SCRIPT DE SEMILLA PARA EVENTO DE BINGO (2 MODERADORES + 1 ADMIN)
 -- ==============================================================================
 
 -- 1. CREACIÓN DE USUARIOS EN AUTH.USERS (Contraseña común para taquilla: 'bingo2026')
@@ -9,21 +9,11 @@ DECLARE
     v_admin_id UUID := '00000000-0000-0000-0000-000000000000';
     v_mod_ids UUID[] := ARRAY[
         '00000000-0000-0000-0000-000000000001'::UUID,
-        '00000000-0000-0000-0000-000000000002'::UUID,
-        '00000000-0000-0000-0000-000000000003'::UUID,
-        '00000000-0000-0000-0000-000000000004'::UUID,
-        '00000000-0000-0000-0000-000000000005'::UUID,
-        '00000000-0000-0000-0000-000000000006'::UUID,
-        '00000000-0000-0000-0000-000000000007'::UUID
+        '00000000-0000-0000-0000-000000000002'::UUID
     ];
     v_mod_nombres TEXT[] := ARRAY[
         'Mesa 1 - Ana Morales',
-        'Mesa 2 - Carlos Pérez',
-        'Mesa 3 - Luis Gómez',
-        'Mesa 4 - Elena Rivas',
-        'Mesa 5 - Jorge Silva',
-        'Mesa 6 - Mariana Díaz',
-        'Mesa 7 - Ricardo Peña'
+        'Mesa 2 - Carlos Pérez'
     ];
     i INT;
 BEGIN
@@ -43,8 +33,28 @@ BEGIN
     VALUES (v_admin_id, 'Administrador Tarima & Auditoría', 'admin', true)
     ON CONFLICT (id) DO UPDATE SET rol = 'admin', activo = true;
 
-    -- Crear los 7 Moderadores y asignar sus lotes físicos correlativos
-    FOR i IN 1..7 LOOP
+    -- Desactivar lotes/perfiles heredados (mesas 3..7) si existieran de una corrida anterior
+    UPDATE public.lotes_talonarios
+    SET activo = false
+    WHERE moderador_id IN (
+        '00000000-0000-0000-0000-000000000003'::UUID,
+        '00000000-0000-0000-0000-000000000004'::UUID,
+        '00000000-0000-0000-0000-000000000005'::UUID,
+        '00000000-0000-0000-0000-000000000006'::UUID,
+        '00000000-0000-0000-0000-000000000007'::UUID
+    );
+    UPDATE public.perfiles
+    SET activo = false
+    WHERE id IN (
+        '00000000-0000-0000-0000-000000000003'::UUID,
+        '00000000-0000-0000-0000-000000000004'::UUID,
+        '00000000-0000-0000-0000-000000000005'::UUID,
+        '00000000-0000-0000-0000-000000000006'::UUID,
+        '00000000-0000-0000-0000-000000000007'::UUID
+    );
+
+    -- Crear los 2 Moderadores y asignar sus lotes físicos correlativos
+    FOR i IN 1..2 LOOP
         INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
         VALUES (
             v_mod_ids[i],
@@ -64,8 +74,6 @@ BEGIN
         -- Talonario físico: 100 cartones por cada moderador
         -- Mesa 1: 1 al 100
         -- Mesa 2: 101 al 200
-        -- ...
-        -- Mesa 7: 601 al 700
         INSERT INTO public.lotes_talonarios (
             moderador_id,
             bloque_nombre,
